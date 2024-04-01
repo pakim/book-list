@@ -1,0 +1,32 @@
+<%- include("partials/header.ejs") %>
+
+<main class="search-page">
+  <% if(locals.searchResults) { %>
+    <form class="search-active" id="search-form" action="/search" method="post">
+      <input type="text" name="searchQuery" minlength="3" placeholder="Enter a book title.." autocomplete="off">
+      <hr>
+      <% searchResults.forEach(result => { %>
+        <div class="search-item">
+          <div class="cover-title">
+            <img src="<%= result.cover %>" alt="<%= result.title %> book cover">
+            <div class="title">
+              <h2><%= result.title %></h2>
+              <% if(result.subtitle) { %>
+                <p><%= result.subtitle %></p>
+              <% } %>
+            </div>
+          </div>
+          <p class="search-author"><%= result.author %></p>
+        </div>
+      <% }) %>
+      <button type="submit" class="search-button">Find Book</button>
+    </form>
+  <% } else { %>
+    <form class="search" id="search-form" action="/search" method="post">
+      <input type="text" name="searchQuery" minlength="3" placeholder="Enter a book title.." autocomplete="off">
+    </form>
+    <button type="submit" class="search-button" form="search-form">Find Book</button>
+  <% } %>
+</main>
+
+<%- include("partials/footer.ejs") %>
