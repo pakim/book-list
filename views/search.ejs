@@ -3,14 +3,22 @@
 <main class="search-page">
   <% if(locals.searchResults) { %>
     <form class="search-active" id="search-form" action="/search" method="post">
-      <input type="text" name="searchQuery" minlength="3" placeholder="Enter a book title.." autocomplete="off">
+      <input type="text" name="searchQuery" minlength="3" placeholder="Enter a book title or author.." autocomplete="off">
       <hr>
+      <button type="submit" class="button" name="search" form="search-form" value="find">Find Book</button>
+      <% if(numResults == 1) { %>
+        <p>Showing 1 result out of <%= total %></p>
+      <% } else { %>
+        <p>Showing <%= numResults %> results out of <%= total %></p>
+      <% } %>
       <% searchResults.forEach(result => { %>
         <div class="search-item">
           <div class="cover-title">
-            <img src="<%= result.cover %>" alt="<%= result.title %> book cover">
+            <div class="image-container">
+              <img src="<%= result.cover %>" alt="<%= result.title %> book cover">
+            </div>
             <div class="title">
-              <h2><%= result.title %></h2>
+              <h3><%= result.title %></h3>
               <% if(result.subtitle) { %>
                 <p><%= result.subtitle %></p>
               <% } %>
@@ -19,13 +27,25 @@
           <p class="search-author"><%= result.author %></p>
         </div>
       <% }) %>
-      <button type="submit" class="search-button">Find Book</button>
+      <div class="buttons">
+        <% if(prev) { %>
+          <button type="submit" class="button" name="search" value="prev">Prev</button>
+        <% } else { %>
+          <button type="submit" class="button disabled" name="search" value="prev">Prev</button>
+        <% } %>
+        <% if(next) { %>
+          <button type="submit" class="button" name="search" value="next">Next</button>
+        <% } else { %>
+          <button type="submit" class="button disabled" name="search" value="next">Next</button>
+        <% } %>
+      </div>
+      <a class="custom">Can't find your book? Create a custom book page</a>
     </form>
   <% } else { %>
     <form class="search" id="search-form" action="/search" method="post">
-      <input type="text" name="searchQuery" minlength="3" placeholder="Enter a book title.." autocomplete="off">
+      <input type="text" name="searchQuery" minlength="3" placeholder="Enter a book title or author.." autocomplete="off">
+      <button type="submit" class="button" name="search" value="find">Find Book</button>
     </form>
-    <button type="submit" class="search-button" form="search-form">Find Book</button>
   <% } %>
 </main>
 
