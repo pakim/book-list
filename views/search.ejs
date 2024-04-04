@@ -11,8 +11,8 @@
       <% } else { %>
         <p>Showing <%= numResults %> results out of <%= total %></p>
       <% } %>
-      <% searchResults.forEach(result => { %>
-        <div class="search-item">
+      <% searchResults.forEach((result, index) => { %>
+        <a href="/new/<%= index %>" class="search-item">
           <div class="cover-title">
             <div class="image-container">
               <img src="<%= result.cover %>" alt="<%= result.title %> book cover">
@@ -25,21 +25,32 @@
             </div>
           </div>
           <p class="search-author"><%= result.author %></p>
-        </div>
+        </a>
       <% }) %>
       <div class="buttons">
+        <% if(first) { %>
+          <button type="submit" class="button" name="search" value="first">First</button>
+        <% } else { %>
+          <button type="submit" class="button disabled" name="search" value="first">First</button>
+        <% } %>
         <% if(prev) { %>
           <button type="submit" class="button" name="search" value="prev">Prev</button>
         <% } else { %>
           <button type="submit" class="button disabled" name="search" value="prev">Prev</button>
         <% } %>
+        <p>Page <%= currentPage %></p>
         <% if(next) { %>
           <button type="submit" class="button" name="search" value="next">Next</button>
         <% } else { %>
           <button type="submit" class="button disabled" name="search" value="next">Next</button>
         <% } %>
+        <% if(last) { %>
+          <button type="submit" class="button" name="search" value="last">Last</button>
+        <% } else { %>
+          <button type="submit" class="button disabled" name="search" value="last">Last</button>
+        <% } %>
       </div>
-      <a class="custom">Can't find your book? Create a custom book page</a>
+      <a href="/new/10" class="custom">Can't find your book? Create a custom book page</a>
     </form>
   <% } else { %>
     <form class="search" id="search-form" action="/search" method="post">

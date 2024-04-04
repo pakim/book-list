@@ -1,0 +1,24 @@
+<%- include("partials/header.ejs") %>
+
+<main class="book-page">
+  <form action="/submit" method="post">
+    <div class="image-container">
+      <img src="<%= bookInfo.cover %>" alt="<%= bookInfo.title %> book cover">
+    </div>
+    <div class="book-info">
+      <input type="text" class="book-title" value="<%= bookInfo.title %>">
+      <input type="text" class="book-subtitle" value="<%= bookInfo.subtitle %>">
+      <input type="text" class="book-author" value="<%= bookInfo.author %>">
+    </div>
+    <div class="notes-container">
+      <h2>Notes</h2>
+      <textarea></textarea>
+    </div>
+    <div class="buttons">
+      <button type="submit" class="save button">Save</button>
+      <a href="/search" class="cancel button">Cancel</a>
+    </div>
+  </form>
+</main>
+
+<%- include("partials/footer.ejs") %>

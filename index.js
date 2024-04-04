@@ -20,9 +20,12 @@ const apiBookSearch = "https://openlibrary.org/search.json";
 const apiCoverSearch = "https://covers.openlibrary.org/b/olid/";
 let suggestions = [];
 let currentPage = 1;
+let maxPages = 1;
 let formattedQuery = "";
 let prevAllowed = false;
 let nextAllowed = false;
+let firstAllowed = false;
+let lastAllowed = false;
 let numFound = 0;
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -47,19 +50,20 @@ app.post("/search", async (req, res) => {
       query = req.body.searchQuery.trim();
       formattedQuery = query.replace(/\s+/g, '+');
       currentPage = 1;
-      prevAllowed = false;
       numFound = 0;
+      maxPages = 1;
       break;
     case "prev":
       --currentPage;
-      if(currentPage === 1) prevAllowed = false;
-      nextAllowed = true;
       break;
     case "next":
       ++currentPage;
-      if(currentPage * 10 >= numFound) nextAllowed = false;
-      prevAllowed = true;
       break;
+    case "first":
+      currentPage = 1;
+      break;
+    case "last":
+      currentPage = maxPages;
     default:
       break;
   }
@@ -79,9 +83,26 @@ app.post("/search", async (req, res) => {
     numFound = result.data.numFound;
     const bookResults = result.data.docs
 
-    // Check if there are enough total results to show a new page of results
-    if(currentPage * 10 >= numFound) nextAllowed = false;
-    else nextAllowed = true;
+    // Check number of pages in search query
+    maxPages = Math.floor(numFound / 10) + 1;
+
+    // Check if search navigation buttons are enabled/disabled
+    if(currentPage > 1) {
+      firstAllowed = true;
+      prevAllowed = true;
+    }
+    else {
+      firstAllowed = false;
+      prevAllowed = false;
+    }
+    if(currentPage < maxPages) {
+      lastAllowed = true;
+      nextAllowed = true;
+    }
+    else {
+      lastAllowed = false;
+      nextAllowed = false;
+    }
 
     // Loop through at most 10 results and add book info to an object which is pushed to suggestions array
     for(let i = 0; i < bookResults.length; i++) {
@@ -94,7 +115,7 @@ app.post("/search", async (req, res) => {
         subtitle: book.subtitle || "",
         author: author,
         cover: apiCoverSearch + cover + "-M.jpg"
-      }
+      };
 
       suggestions.push(option);
     }
@@ -108,8 +129,27 @@ app.post("/search", async (req, res) => {
     numResults: suggestions.length,
     prev: prevAllowed,
     next: nextAllowed,
-    total: numFound
+    first: firstAllowed,
+    last: lastAllowed,
+    total: numFound,
+    currentPage: currentPage
   });
+});
+
+app.get("/new/:index", (req, res) => {
+  const index = parseInt(req.params.index);
+  let book = {
+    title: "",
+    subtitle: "",
+    author: "",
+    cover: ""
+  };
+
+  if(index !== 10) {
+    book = suggestions[index];
+  }
+
+  res.render("book.ejs", { bookInfo: book });
 });
 
 app.listen(port, () => {
