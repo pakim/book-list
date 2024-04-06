@@ -6,10 +6,12 @@ import pg from "pg"
 const db = new pg.Client({
   user: "postgres",
   host: "localhost",
-  database: "",
+  database: "booklist",
   password: "123456",
   port: 5432
 });
+
+db.connect();
 
 // Global variables
 const app = express();
@@ -142,7 +144,8 @@ app.get("/new/:index", (req, res) => {
     title: "",
     subtitle: "",
     author: "",
-    cover: ""
+    cover: "",
+    rating: 0
   };
 
   if(index !== 10) {
@@ -150,6 +153,22 @@ app.get("/new/:index", (req, res) => {
   }
 
   res.render("book.ejs", { bookInfo: book });
+});
+
+app.post("/submit", async (req, res) => {
+  let rating = 0;
+  if(req.body.rating) {
+    rating = parseInt(req.body.rating);
+  }
+
+  try {
+    const result = await db.query("INSERT INTO books (title, subtitle, author, cover, notes, rating) VALUES ($1, $2, $3, $4, $5, $6)",
+    [req.body.title, req.body.subtitle, req.body.author, req.body.cover, req.body.notes, rating]);
+    res.redirect("/");
+  }
+  catch(error) {
+    console.log("Error inputting data");
+  }
 });
 
 app.listen(port, () => {

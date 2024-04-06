@@ -48,6 +48,7 @@ main {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  transition: all .3s ease;
 }
 
 .header h1 {
@@ -220,13 +221,34 @@ main {
   flex-direction: column;
   align-items: center;
   width: 70%;
+  min-width: 1000px;
+  max-width: 1400px;
 }
 
 .book-page form {
   display: grid;
   grid-template-columns: 1fr 2fr;
-  grid-template-rows: 50vh 1fr;
+  grid-template-rows: 5fr 2fr;
   gap: 20px;
+  width: 100%;
+  background-color: #31363F;
+  border: none;
+  box-shadow: 0 0 3px 3px rgba(0, 0, 0, 0.3);
+  border-radius: 25px;
+  padding: 15px;
+}
+
+.book-page .image-rating {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.book-page .book-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  height: 100%;
   width: 100%;
 }
 
@@ -234,13 +256,14 @@ main {
   background-image: url("/images/not-found.jpg");
   background-repeat: no-repeat;
   background-size: 100% 100%;
-  object-fit: center;
   width: 100%;
+  border-radius: 25px;
 }
 
 .book-page .image-container img {
   width: 100%;
   height: 100%;
+  border-radius: 25px;
 }
 
 .book-page .notes-container {
@@ -248,15 +271,95 @@ main {
 }
 
 .book-page .notes-container textarea {
-  width: 100%
+  width: 100%;
+  height: 230px;
+  margin-top: 5px;
+  padding: 10px;
+  border-radius: 5px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 1rem;
+  resize: none;
 }
 
 .book-page .buttons {
   grid-column: 1 / -1;
 }
 
-@media (max-width: 1000px) {
+.book-page .rating {
+  user-select: none;
+}
+
+.book-page input {
+  display: block;
+  width: 100%;
+  border-radius: 5px;
+  padding: 5px;
+  outline: none;
+}
+
+.book-page label {
+  color: #eeeeee;
+}
+
+.book-page label, .book-page input {
+  font-size: 1.2rem;
+  margin-bottom: 5px;
+}
+
+.book-page .button {
+  margin: 20px 0;
+}
+
+.book-page .save {
+  background-color: #76ABAE;
+  color: #222831;
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.book-page .rating label {
+  font-size: 2rem;
+  text-shadow: 0 0 2px #eeeeee;
+  color: #31363F;
+  cursor: pointer;
+}
+
+.book-page .rating label.filled {
+  color: gold;
+}
+
+.book-page .rating input {
+  display: none;
+  cursor: pointer;
+}
+
+.book-page .hidden {
+  display: none;
+}
+
+.scroll {
+  opacity: 0.8;
+}
+
+@media (min-width: 601px) and (max-width: 1000px) {
   .search-page, .book-page {
     width: 100%;
+    min-width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .search-page, .book-page {
+    width: 100%;
+    min-width: 100%;
+  }
+  
+  .book-page form {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .book-page .image-container {
+    width: 70%;
   }
 }

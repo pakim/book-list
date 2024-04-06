@@ -2,20 +2,56 @@
 
 <main class="book-page">
   <form action="/submit" method="post">
-    <div class="image-container">
-      <img src="<%= bookInfo.cover %>" alt="<%= bookInfo.title %> book cover">
+    <div class="image-rating">
+      <div class="image-container">
+        <img src="<%= bookInfo.cover %>" alt="<%= bookInfo.title %> book cover">
+      </div>
+      <div class="rating">
+        <% for(let i = 1; i <= 5; i++) { %>
+          <% if(i == bookInfo.rating) { %>
+            <input type="radio" id="star<%= i %>" name="rating" value="<%= i %>" checked>
+          <% } else { %>
+            <input type="radio" id="star<%= i %>" name="rating" value="<%= i %>">
+          <% } %>
+          <% if(i <= bookInfo.rating) { %>
+            <label class="filled" for="star<%= i %>">★</label>
+          <% } else { %>
+            <label for="star<%= i %>">★</label>
+          <% } %>
+        <% } %>
+      </div>
     </div>
     <div class="book-info">
-      <input type="text" class="book-title" value="<%= bookInfo.title %>">
-      <input type="text" class="book-subtitle" value="<%= bookInfo.subtitle %>">
-      <input type="text" class="book-author" value="<%= bookInfo.author %>">
+      <label for="title">Title:</label>
+      <input type="text" class="book-title" id="title" name="title" value="<%= bookInfo.title %>" required>
+      <% if(bookInfo.subtitle) { %>
+        <label id="subtitle-label" for="subtitle">Subtitle:</label>
+        <input type="text" class="book-subtitle" id="subtitle" name="subtitle" value="<%= bookInfo.subtitle %>">
+        <button type="button" class="add-subtitle button hidden">Add Subtitle</button>
+      <% } else { %>
+        <label id="subtitle-label" class="hidden" for="subtitle">Subtitle:</label>
+        <input type="text" class="book-subtitle hidden" id="subtitle" name="subtitle" value="<%= bookInfo.subtitle %>">
+        <button type="button" class="add-subtitle button">Add Subtitle</button>
+      <% } %>
+      <% if(bookInfo.author) { %>
+        <label id="author-label" for="author">Author:</label>
+        <input type="text" class="book-author" id="author" name="author" value="<%= bookInfo.author %>">
+        <button type="button" class="add-author button hidden">Add Author</button>
+      <% } else { %>
+        <label id="author-label" class="hidden" for="author">Author:</label>
+        <input type="text" class="book-author hidden" id="author" name="author" value="<%= bookInfo.author %>">
+        <button type="button" class="add-author button">Add Author</button>
+      <% } %>
+      <label id="cover-label" for="cover" class="hidden">Cover Url:</label>
+      <input type="text" class="book-cover hidden" id="cover" name="cover" value="<%= bookInfo.cover %>">
+      <button type="button" class="add-cover button">Add Cover Url</button>
     </div>
     <div class="notes-container">
-      <h2>Notes</h2>
-      <textarea></textarea>
+      <label for="notes">Notes:</label>
+      <textarea id="notes" name="notes"></textarea>
     </div>
     <div class="buttons">
-      <button type="submit" class="save button">Save</button>
+      <button type="/submit" class="save button">Save</button>
       <a href="/search" class="cancel button">Cancel</a>
     </div>
   </form>
