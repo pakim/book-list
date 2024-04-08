@@ -1,3 +1,11 @@
 <%- include("partials/header.ejs") %>
 
+<main class="home-page">
+  <% locals.bookList.forEach(book => { %>
+    <a href="/book/<%= book.id %>">
+      <img src="<%= book.cover %>" alt="<%= book.title %> cover image">
+    </a>
+  <% }); %>
+</main>
+
 <%- include("partials/footer.ejs") %>

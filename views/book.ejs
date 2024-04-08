@@ -1,7 +1,11 @@
 <%- include("partials/header.ejs") %>
 
 <main class="book-page">
-  <form action="/submit" method="post">
+  <% if(locals.edit) { %>
+    <form action="/update/<%= bookInfo.id %>" class="submit" method="post">
+  <% } else { %>
+    <form action="/submit" class="submit" method="post">
+  <% } %>
     <div class="image-rating">
       <div class="image-container">
         <img src="<%= bookInfo.cover %>" alt="<%= bookInfo.title %> book cover">
@@ -48,13 +52,27 @@
     </div>
     <div class="notes-container">
       <label for="notes">Notes:</label>
-      <textarea id="notes" name="notes"></textarea>
+      <textarea id="notes" name="notes"><%= bookInfo.notes %></textarea>
     </div>
     <div class="buttons">
-      <button type="/submit" class="save button">Save</button>
-      <a href="/search" class="cancel button">Cancel</a>
+      <% if(locals.edit) { %>
+        <button type="/submit" class="update button">Update</button>
+      <% } else { %>
+        <button type="/submit" class="save button">Save</button>
+      <% } %>
+      <a href="/" class="cancel button">Cancel</a>
+      <button class="delete button" type="button">Delete</button>
     </div>
   </form>
+  <% if(locals.edit) { %>
+    <form action="/delete/<%= bookInfo.id %>" class="delete hidden" method="post">
+      <p>Are you sure you want to delete?</p>
+      <div class="buttons">
+        <button class="delete button" type="submit">Delete</button>
+        <button class="cancel button" type="button">Cancel</button>
+      </div>
+    </form>
+  <% } %>
 </main>
 
 <%- include("partials/footer.ejs") %>

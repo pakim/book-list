@@ -34,8 +34,17 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
 // Handle requests here
-app.get("/", (req, res) => {
-  res.render("index.ejs", { temp: "something" });
+app.get("/", async (req, res) => {
+  let booklist = [];
+  try {
+    const result = await db.query("SELECT * FROM books");
+    booklist = result.rows;
+  }
+  catch(error) {
+    console.log("An error occurred when querying the database");
+  }
+
+  res.render("index.ejs", { bookList: booklist });
 });
 
 app.get("/search", (req, res) => {
@@ -144,7 +153,7 @@ app.get("/new/:index", (req, res) => {
     title: "",
     subtitle: "",
     author: "",
-    cover: "",
+    cover: "https://covers.openlibrary.org/b/olid/OL41447235M-M.jpg",
     rating: 0
   };
 
@@ -168,6 +177,79 @@ app.post("/submit", async (req, res) => {
   }
   catch(error) {
     console.log("Error inputting data");
+  }
+});
+
+app.get("/book/:id", async (req, res) => {
+  const id = parseInt(req.params.id);
+  let book = {
+    title: "",
+    subtitle: "",
+    author: "",
+    cover: "",
+    rating: 0
+  };
+
+  try {
+    const result = await db.query("SELECT * FROM books WHERE id = $1", [id]);
+    book = result.rows[0];
+  }
+  catch(error) {
+    console.log("Error retrieving book info from database");
+  }
+
+  res.render("book.ejs", { 
+    bookInfo: book,
+    edit: true
+  });
+});
+
+app.post("/update/:id", async (req, res) => {
+  const id = parseInt(req.params.id);
+  let rating = 0;
+  if(req.body.rating) {
+    rating = parseInt(req.body.rating);
+  }
+
+  try {
+    const result = await db.query("SELECT * FROM books WHERE id = $1", [id]);
+    const book = result.rows[0];
+
+    if(req.body.title !== book.title) {
+      await db.query("UPDATE books SET title = $1 WHERE id = $2", [req.body.title, id]);
+    }
+    if(req.body.subtitle !== book.subtitle) {
+      await db.query("UPDATE books SET subtitle = $1 WHERE id = $2", [req.body.subtitle, id]);
+    }
+    if(req.body.author !== book.author) {
+      await db.query("UPDATE books SET author = $1 WHERE id = $2", [req.body.author, id]);
+    }
+    if(req.body.cover !== book.cover) {
+      await db.query("UPDATE books SET cover = $1 WHERE id = $2", [req.body.cover, id]);
+    }
+    if(rating !== book.rating) {
+      await db.query("UPDATE books SET rating = $1 WHERE id = $2", [rating, id]);
+    }
+    if(req.body.notes !== book.notes) {
+      await db.query("UPDATE books SET notes = $1 WHERE id = $2", [req.body.notes, id]);
+    }
+  }
+  catch(error) {
+    console.log("An error occurred while trying to update.");
+    console.log(error);
+  }
+
+  res.redirect("/");
+});
+
+app.post("/delete/:id", async (req, res) => {
+  const id = parseInt(req.params.id);
+  try {
+    await db.query("DELETE FROM books WHERE id = $1", [id]);
+    res.redirect("/");
+  }
+  catch(error) {
+    console.log("An error occurred while deleting.");
   }
 });
 
