@@ -1,14 +1,21 @@
 import express from "express";
 import bodyParser from "body-parser";
 import axios from "axios";
-import pg from "pg"
+import pg from "pg";
+import env from "dotenv";
+import bcrypt from "bcrypt";
+import session from "express-session";
+import passport from "passport";
+import { Strategy } from "passport-local";
+
+env.config();
 
 const db = new pg.Client({
-  user: "postgres",
-  host: "localhost",
-  database: "booklist",
-  password: "123456",
-  port: 5432
+  user: process.env.PG_USER,
+  host: process.env.PG_HOST,
+  database: process.env.PG_DATABASE,
+  password: process.env.PG_PASSWORD,
+  port: parseInt(process.env.PG_PORT)
 });
 
 db.connect();
@@ -16,6 +23,7 @@ db.connect();
 // Global variables
 const app = express();
 const port = 3000;
+const saltRounds = parseInt(process.env.SALT_ROUNDS);
 
 // Book search global variables
 const apiBookSearch = "https://openlibrary.org/search.json";
@@ -30,26 +38,148 @@ let firstAllowed = false;
 let lastAllowed = false;
 let numFound = 0;
 
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: true
+}));
+
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
-// Handle requests here
-app.get("/", async (req, res) => {
-  let booklist = [];
-  try {
-    const result = await db.query("SELECT * FROM books");
-    booklist = result.rows;
-  }
-  catch(error) {
-    console.log("An error occurred when querying the database");
-  }
+app.use(passport.initialize());
+app.use(passport.session());
 
-  res.render("index.ejs", { bookList: booklist });
+// Handle requests here
+app.get("/login", (req, res) => {
+  res.render("login.ejs");
+});
+
+app.get("/register", (req, res) => {
+  res.render("register.ejs");
+});
+
+app.post("/logout", (req, res) => {
+  req.logout(function (err) {
+    if(err) {
+      return next(err);
+    }
+    else {
+      res.redirect("/");
+    }
+  });
+});
+
+app.post("/register", async (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+
+  try {
+    // Check if email is already in the database
+    const checkEmail = await db.query("SELECT * FROM users WHERE email = $1", [email]);
+
+    // If no users found, hash password
+    if(checkEmail.rows.length === 0) {
+      bcrypt.hash(password, saltRounds, async (err, hash) => {
+        if(err) {
+          console.error("Error hashing password: ", err);
+        }
+        else {
+          // Insert new user into table and login session
+          const result = await db.query("INSERT INTO users (email, password) VALUES ($1, $2) RETURNING *", [email, hash]);
+          const user = result.rows[0];
+
+          req.login(user, (err) => {
+            if(err) {
+              console.error("Error hashing password: ", err);
+            }
+            else {
+              console.log("Success");
+              res.redirect("/");
+            }
+          });
+        }
+      });
+    }
+    else {
+      console.log("User already created");
+    }
+  }
+  catch(err) {
+    console.error("Error checking email", err);
+  }
+});
+
+app.post("/login",
+  passport.authenticate("local", {
+    successRedirect: "/",
+    failureRedirect: "/login"
+  })
+);
+
+// Local strategy for authenticating login. Note: verify must have username and password fields
+passport.use("local",
+  new Strategy(async function verify(username, password, cb) {
+    try {
+      // Check if user exists
+      const result = await db.query("SELECT * FROM users WHERE email = $1", [username]);
+
+      if(result.rows.length > 0) {
+        const user = result.rows[0];
+        const savedPassword = user.password;
+
+        // Compare entered password with user password
+        bcrypt.compare(password, savedPassword, (err, valid) => {
+          if(err) {
+            console.error("Error comparing passwords: ", err);
+            return cb(err);
+          }
+          else {
+            if(valid) {
+              console.log("Login success")
+              cb(null, user);
+            }
+            else {
+              console.log("Login failed");
+              cb(null, false);
+            }
+          }
+        });
+      }
+      else {
+        return cb("User not found");
+      }
+    }
+    catch(err) {
+      console.error("Error checking database", err);
+    }
+  })
+);
+
+app.get("/", async (req, res) => {
+  // Check if user is logged in
+  if(req.isAuthenticated()) {
+    const userID = req.user.id;
+    let booklist = [];
+    try {
+      // Query all of the user's books and send to the ejs file
+      const result = await db.query("SELECT * FROM books WHERE userid = $1", [userID]);
+      booklist = result.rows;
+    }
+    catch(err) {
+      console.error("An error occurred when querying the database", err);
+    }
+
+    res.render("index.ejs", { bookList: booklist });
+  }
+  else {
+    res.redirect("/login");
+  }
 });
 
 app.get("/search", (req, res) => {
   res.render("search.ejs");
-})
+});
 
 app.post("/search", async (req, res) => {
   let query = "";
@@ -149,6 +279,8 @@ app.post("/search", async (req, res) => {
 
 app.get("/new/:index", (req, res) => {
   const index = parseInt(req.params.index);
+
+  // Book parameters for custom book entry. Default cover url is a blank image
   let book = {
     title: "",
     subtitle: "",
@@ -165,18 +297,20 @@ app.get("/new/:index", (req, res) => {
 });
 
 app.post("/submit", async (req, res) => {
+  const userID = req.user.id;
   let rating = 0;
   if(req.body.rating) {
     rating = parseInt(req.body.rating);
   }
 
   try {
-    const result = await db.query("INSERT INTO books (title, subtitle, author, cover, notes, rating) VALUES ($1, $2, $3, $4, $5, $6)",
-    [req.body.title, req.body.subtitle, req.body.author, req.body.cover, req.body.notes, rating]);
+    // Insert new book entry into the database and redirect to home page
+    await db.query("INSERT INTO books (title, subtitle, author, cover, notes, rating, userID) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+    [req.body.title, req.body.subtitle, req.body.author, req.body.cover, req.body.notes, rating, userID]);
     res.redirect("/");
   }
-  catch(error) {
-    console.log("Error inputting data");
+  catch(err) {
+    console.error("Error inputting data", err);
   }
 });
 
@@ -191,11 +325,12 @@ app.get("/book/:id", async (req, res) => {
   };
 
   try {
+    // Retrieve book info fom the database
     const result = await db.query("SELECT * FROM books WHERE id = $1", [id]);
     book = result.rows[0];
   }
-  catch(error) {
-    console.log("Error retrieving book info from database");
+  catch(err) {
+    console.error("Error retrieving book info from database", err);
   }
 
   res.render("book.ejs", { 
@@ -234,9 +369,8 @@ app.post("/update/:id", async (req, res) => {
       await db.query("UPDATE books SET notes = $1 WHERE id = $2", [req.body.notes, id]);
     }
   }
-  catch(error) {
-    console.log("An error occurred while trying to update.");
-    console.log(error);
+  catch(err) {
+    console.err("An error occurred while trying to update.", err);
   }
 
   res.redirect("/");
@@ -248,9 +382,17 @@ app.post("/delete/:id", async (req, res) => {
     await db.query("DELETE FROM books WHERE id = $1", [id]);
     res.redirect("/");
   }
-  catch(error) {
-    console.log("An error occurred while deleting.");
+  catch(err) {
+    console.error("An error occurred while deleting.", err);
   }
+});
+
+passport.serializeUser((user, cb) => {
+  cb(null, user);
+});
+
+passport.deserializeUser((user, cb) => {
+  cb(null, user);
 });
 
 app.listen(port, () => {
